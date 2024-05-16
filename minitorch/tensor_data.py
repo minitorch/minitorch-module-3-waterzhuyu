@@ -44,7 +44,12 @@ def index_to_position(index: Index, strides: Strides) -> int:
         Position in storage
     """
 
-    return sum([i * j for i, j in zip(index, strides)])
+    # return sum([i * j for i, j in zip(index, strides)])
+    res = 0
+    for i in range(len(strides)):
+        res += index[i] * strides[i]
+
+    return res
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -85,15 +90,18 @@ def broadcast_index(
     Returns:
         None
     """
-    # Can't use `reversed()`, 
+    # Can't use `reversed()`
     for idx, (i, j) in enumerate(zip(shape[::-1], big_shape[::-1])):
         if i == j:
-            out_index[len(out_index) - 1 - idx] = big_index[len(big_index) - 1 - idx]
+            out_index[len(shape) - 1 - idx] = big_index[len(big_shape) - 1 - idx]
+            # out_index[idx] = big_index[idx]
             continue
 
         out_index[len(out_index) - 1 - idx] = 0  # this dimension is broadcasted
+        # out_index[idx] = 0
 
-    out_index = out_index[len(out_index) - len(shape) :]  # remove additional dimensions
+    # out_index = out_index[len(out_index) - len(shape) : ]  # remove additional dimensions
+    out_index = out_index[::-1]  # trancate the spare trailing index or not...
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
@@ -168,8 +176,8 @@ class TensorData:
         assert len(self._storage) == self.size
 
     def to_cuda_(self) -> None:  # pragma: no cover
-        if not numba.cuda.is_cuda_array(self._storage):
-            self._storage = numba.cuda.to_device(self._storage)
+        # if not numba.cuda.is_cuda_array(self._storage):
+        self._storage = numba.cuda.to_device(self._storage)
 
     def is_contiguous(self) -> bool:
         """

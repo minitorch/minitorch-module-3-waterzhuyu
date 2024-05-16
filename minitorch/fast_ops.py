@@ -164,7 +164,7 @@ def tensor_map(
 
         # check the length of the iterable then starting iterate...
         if len(out_strides) == len(in_strides) and (out_strides == in_strides).all() \
-                and (out_shape == in_shape).all():  # When `out` and `in` are stride-aligned
+                and len(out_shape) == len(in_shape) and (out_shape == in_shape).all():  # When `out` and `in` are stride-aligned
 
             for i in prange(out.size):
                 out[i] = fn(in_storage[i])
@@ -172,7 +172,7 @@ def tensor_map(
 
         for i in prange(out.size):
             # Define `out_index` and `in_index` in the loop in case of data race.
-            out_index: Index = np.zeros_like(out_shape, dtype=np.int32)
+            out_index: Index = np.zeros_like(out_shape, dtype=np.int32)  # how to create index by using numpy buffers?
             in_index: Index = np.zeros_like(in_shape, dtype=np.int32)
 
             to_index(i, out_shape, out_index)
@@ -355,7 +355,7 @@ def _tensor_matrix_multiply(
                 b_inner = i * b_batch_stride + k * b_strides[2]
 
                 num = 0.
-                for _ in range(a_shape[-1]):  # a_shape[-1] == b_shape[2]
+                for _ in range(a_shape[-1]):  # a_shape[-1] == b_shape[-2]
                     num += a_storage[a_inner] * b_storage[b_inner]
                     a_inner += a_strides[2]
                     b_inner += b_strides[1]

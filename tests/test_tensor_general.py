@@ -2,6 +2,7 @@ import random
 from typing import Callable, Dict, Iterable, List, Tuple
 
 import numba
+import numba.cuda
 import pytest
 from hypothesis import given, settings
 from hypothesis.strategies import DataObject, data, integers, lists, permutations
@@ -385,7 +386,20 @@ def test_bmm(backend: str, data: DataObject) -> None:
 
 
 if __name__ == "__main__":
-    tensor1 = Tensor.make([0.], (1, ), backend=FastTensorBackend)
-    print(tensor1)
-    _, _, tensor_fn = one_arg[0]
-    grad_check(tensor_fn, tensor1)
+    print(numba.cuda.is_available())
+
+    size = 33
+    x1 = [[random.random() for i in range(size)] for j in range(size)]
+    y1 = [[random.random() for i in range(size)] for j in range(size)]
+    z = minitorch.tensor(x1, backend=shared["fast"]) @ minitorch.tensor(
+        y1, backend=shared["fast"]
+    )
+
+    x = minitorch.tensor(x1, backend=shared["cuda"])
+    y = minitorch.tensor(y1, backend=shared["cuda"])
+    z2 = x @ y
+
+    for i in range(size):
+        for j in range(size):
+            assert_close(z[i, j], z2[i, j])
+            print(i, j, True)
